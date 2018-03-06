@@ -7,6 +7,9 @@ const vm = require('vm');
 const fs = require('fs');
 const _ = require('lodash');
 const path = require('path');
+const SyncWaterfallHook = require('tapable').SyncWaterfallHook;
+const AsyncSeriesWaterfallHook = require('tapable').AsyncSeriesWaterfallHook;
+
 const childCompiler = require('./lib/compiler.js');
 const prettyError = require('./lib/errors.js');
 const chunkSorter = require('./lib/chunksorter.js');
@@ -49,21 +52,16 @@ class HtmlWebpackPlugin {
     }
 
     // setup hooks for webpack 4
-    if (compiler.hooks) {
-      compiler.hooks.compilation.tap('HtmlWebpackPluginHooks', compilation => {
-        const SyncWaterfallHook = require('tapable').SyncWaterfallHook;
-        const AsyncSeriesWaterfallHook = require('tapable').AsyncSeriesWaterfallHook;
-        compilation.hooks.htmlWebpackPluginAlterChunks = new SyncWaterfallHook(['chunks', 'objectWithPluginRef']);
-        compilation.hooks.htmlWebpackPluginBeforeHtmlGeneration = new AsyncSeriesWaterfallHook(['pluginArgs']);
-        compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing = new AsyncSeriesWaterfallHook(['pluginArgs']);
-        compilation.hooks.htmlWebpackPluginAlterAssetTags = new AsyncSeriesWaterfallHook(['pluginArgs']);
-        compilation.hooks.htmlWebpackPluginAfterHtmlProcessing = new AsyncSeriesWaterfallHook(['pluginArgs']);
-        compilation.hooks.htmlWebpackPluginAfterEmit = new AsyncSeriesWaterfallHook(['pluginArgs']);
-      });
-    }
+    compiler.hooks.compilation.tap('HtmlWebpackPluginHooks', compilation => {
+      compilation.hooks.htmlWebpackPluginAlterChunks = new SyncWaterfallHook(['chunks', 'objectWithPluginRef']);
+      compilation.hooks.htmlWebpackPluginBeforeHtmlGeneration = new AsyncSeriesWaterfallHook(['pluginArgs']);
+      compilation.hooks.htmlWebpackPluginBeforeHtmlProcessing = new AsyncSeriesWaterfallHook(['pluginArgs']);
+      compilation.hooks.htmlWebpackPluginAlterAssetTags = new AsyncSeriesWaterfallHook(['pluginArgs']);
+      compilation.hooks.htmlWebpackPluginAfterHtmlProcessing = new AsyncSeriesWaterfallHook(['pluginArgs']);
+      compilation.hooks.htmlWebpackPluginAfterEmit = new AsyncSeriesWaterfallHook(['pluginArgs']);
+    });
 
-    // Backwards compatible version of: compiler.hooks.make.tapAsync()
-    (compiler.hooks ? compiler.hooks.make.tapAsync.bind(compiler.hooks.make, 'HtmlWebpackPlugin') : compiler.plugin.bind(compiler, 'make'))((compilation, callback) => {
+    compiler.hooks.make.tapAsync('HtmlWebpackPlugin', (compilation, callback) => {
       // Compile the template (queued)
       compilationPromise = childCompiler.compileTemplate(self.options.template, compiler.context, self.options.filename, compilation)
         .catch(err => {
@@ -83,8 +81,7 @@ class HtmlWebpackPlugin {
         });
     });
 
-    // Backwards compatible version of: compiler.plugin.emit.tapAsync()
-    (compiler.hooks ? compiler.hooks.emit.tapAsync.bind(compiler.hooks.emit, 'HtmlWebpackPlugin') : compiler.plugin.bind(compiler, 'emit'))((compilation, callback) => {
+    compiler.hooks.emit.tapAsync('HtmlWebpackPlugin', (compilation, callback) => {
       const applyPluginsAsyncWaterfall = self.applyPluginsAsyncWaterfall(compilation);
       // Get chunks info as json
       // Note: we're excluding stuff that we don't need to improve toJson serialization speed.
@@ -109,12 +106,7 @@ class HtmlWebpackPlugin {
       // Sort chunks
       chunks = self.sortChunks(chunks, self.options.chunksSortMode, compilation.chunkGroups);
       // Let plugins alter the chunks and the chunk sorting
-      if (compilation.hooks) {
-        chunks = compilation.hooks.htmlWebpackPluginAlterChunks.call(chunks, { plugin: self });
-      } else {
-        // Before Webpack 4
-        chunks = compilation.applyPluginsWaterfall('html-webpack-plugin-alter-chunks', chunks, { plugin: self });
-      }
+      chunks = compilation.hooks.htmlWebpackPluginAlterChunks.call(chunks, { plugin: self });
       // Get assets
       const assets = self.htmlWebpackPluginAssets(compilation, chunks);
       // If this is a hot update compilation, move on!
@@ -159,7 +151,7 @@ class HtmlWebpackPlugin {
         })
         // Allow plugins to make changes to the assets before invoking the template
         // This only makes sense to use if `inject` is `false`
-        .then(compilationResult => applyPluginsAsyncWaterfall('html-webpack-plugin-before-html-generation', false, {
+        .then(compilationResult => applyPluginsAsyncWaterfall('htmlWebpackPluginBeforeHtmlGeneration', false, {
           assets: assets,
           outputName: self.childCompilationOutputName,
           plugin: self
@@ -172,7 +164,7 @@ class HtmlWebpackPlugin {
         // Allow plugins to change the html before assets are injected
         .then(html => {
           const pluginArgs = {html: html, assets: assets, plugin: self, outputName: self.childCompilationOutputName};
-          return applyPluginsAsyncWaterfall('html-webpack-plugin-before-html-processing', true, pluginArgs);
+          return applyPluginsAsyncWaterfall('htmlWebpackPluginBeforeHtmlProcessing', true, pluginArgs);
         })
         .then(result => {
           const html = result.html;
@@ -181,7 +173,7 @@ class HtmlWebpackPlugin {
           const assetTags = self.generateAssetTags(assets);
           const pluginArgs = {head: assetTags.head, body: assetTags.body, plugin: self, chunks: chunks, outputName: self.childCompilationOutputName};
           // Allow plugins to change the assetTag definitions
-          return applyPluginsAsyncWaterfall('html-webpack-plugin-alter-asset-tags', true, pluginArgs)
+          return applyPluginsAsyncWaterfall('htmlWebpackPluginAlterAssetTags', true, pluginArgs)
             .then(result => self.postProcessHtml(html, assets, { body: result.body, head: result.head })
             .then(html => _.extend(result, {html: html, assets: assets})));
         })
@@ -190,7 +182,7 @@ class HtmlWebpackPlugin {
           const html = result.html;
           const assets = result.assets;
           const pluginArgs = {html: html, assets: assets, plugin: self, outputName: self.childCompilationOutputName};
-          return applyPluginsAsyncWaterfall('html-webpack-plugin-after-html-processing', true, pluginArgs)
+          return applyPluginsAsyncWaterfall('htmlWebpackPluginAfterHtmlProcessing', true, pluginArgs)
             .then(result => result.html);
         })
         .catch(err => {
@@ -208,7 +200,7 @@ class HtmlWebpackPlugin {
             size: () => html.length
           };
         })
-        .then(() => applyPluginsAsyncWaterfall('html-webpack-plugin-after-emit', false, {
+        .then(() => applyPluginsAsyncWaterfall('htmlWebpackPluginAfterEmit', false, {
           html: compilation.assets[self.childCompilationOutputName],
           outputName: self.childCompilationOutputName,
           plugin: self
@@ -485,7 +477,6 @@ class HtmlWebpackPlugin {
     const scripts = assets.js.map(scriptPath => ({
       tagName: 'script',
       closeTag: true,
-
       attributes: {
         type: 'text/javascript',
         src: scriptPath
@@ -497,7 +488,6 @@ class HtmlWebpackPlugin {
     const styles = assets.css.map(stylePath => ({
       tagName: 'link',
       selfClosingTag: selfClosingTag,
-
       attributes: {
         href: stylePath,
         rel: 'stylesheet'
@@ -635,53 +625,21 @@ class HtmlWebpackPlugin {
    * a function that helps to merge given plugin arguments with processed ones
    */
   applyPluginsAsyncWaterfall (compilation) {
-    if (compilation.hooks) {
-      return (eventName, requiresResult, pluginArgs) => {
-        const ccEventName = trainCaseToCamelCase(eventName);
-        if (!compilation.hooks[ccEventName]) {
-          compilation.errors.push(
-            new Error('No hook found for ' + eventName)
-          );
-        }
-
-        return compilation.hooks[ccEventName].promise(pluginArgs);
-      };
-    }
-
-    // Before Webpack 4
-    const promisedApplyPluginsAsyncWaterfall = function (name, init) {
-      return new Promise((resolve, reject) => {
-        const callback = function (err, result) {
-          if (err) {
-            return reject(err);
-          }
-          resolve(result);
-        };
-        compilation.applyPluginsAsyncWaterfall(name, init, callback);
-      });
-    };
-
-    return (eventName, requiresResult, pluginArgs) => promisedApplyPluginsAsyncWaterfall(eventName, pluginArgs)
+    return (eventName, requiresResult, pluginArgs) => {
+      if (!compilation.hooks[eventName]) {
+        compilation.errors.push(
+          new Error('No hook found for ' + eventName)
+        );
+      }
+      return compilation.hooks[eventName].promise(pluginArgs)
       .then(result => {
         if (requiresResult && !result) {
-          compilation.warnings.push(
-            new Error('Using ' + eventName + ' without returning a result is deprecated.')
-          );
+          throw new Error('Using ' + eventName + ' did not return a result.');
         }
-        return _.extend(pluginArgs, result);
+        return result;
       });
+    };
   }
-}
-
-/**
- * Takes a string in train case and transforms it to camel case
- *
- * Example: 'hello-my-world' to 'helloMyWorld'
- *
- * @param {string} word
- */
-function trainCaseToCamelCase (word) {
-  return word.replace(/-([\w])/g, (match, p1) => p1.toUpperCase());
 }
 
 module.exports = HtmlWebpackPlugin;

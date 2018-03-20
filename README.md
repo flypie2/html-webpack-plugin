@@ -14,7 +14,7 @@
   <div>
     <img width="100" height="100" title="Webpack Plugin" src="http://michael-ciniawsky.github.io/postcss-load-plugins/logo.svg">
   </div>
-  <h1>HTML Webpack Plugin</h1>
+  <h1>Sina HTML Webpack Plugin</h1>
   <p>Plugin that simplifies creation of HTML files to serve your bundles</p>
 </div>
 
@@ -29,6 +29,9 @@
   yarn add --dev html-webpack-plugin
 ```
 
+```bash
+  yarn add marauder-umd-loader
+```
 
 
 This is a [webpack](http://webpack.js.org/) plugin that simplifies creation of HTML files to serve your `webpack` bundles. This is especially useful for `webpack` bundles that include a hash in the filename which changes every compilation. You can either let the plugin generate an HTML file for you, supply

@@ -5,7 +5,7 @@
       src="https://webpack.js.org/assets/icon-square-big.svg">
   </a>
   <div>
-    <img width="100" height="100" title="Webpack Plugin" src="http://i2.sinaimg.cn/dy/deco/2013/0329/logo/LOGO_2x.png">
+    <img title="Webpack Plugin" src="http://i2.sinaimg.cn/dy/deco/2013/0329/logo/LOGO_2x.png">
   </div>
   <h1>Sina HTML Webpack Plugin</h1>
   <p>Plugin that simplifies creation of HTML files to serve your bundles</p>

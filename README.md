@@ -11,7 +11,7 @@
   <p>Plugin that simplifies creation of HTML files to serve your bundles</p>
   <p>在社区版本的基础上增加的功能:
     <br/>
-    import url 修改打包出来的html<br/>
+    import url 注入打包出来的html<br/>
     template功能和html-loader并存
   </p>
 </div>

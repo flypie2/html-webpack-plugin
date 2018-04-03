@@ -1,6 +1,6 @@
 {
   "name": "sina-html-webpack-plugin",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "license": "MIT",
   "description":
     "Simplifies creation of HTML files to serve your webpack bundles",

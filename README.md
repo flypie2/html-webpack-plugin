@@ -9,6 +9,11 @@
   </div>
   <h1>Sina HTML Webpack Plugin</h1>
   <p>Plugin that simplifies creation of HTML files to serve your bundles</p>
+  <p>在社区版本的基础上增加的功能:
+    <br/>
+    import url 修改打包出来的html<br/>
+    template功能和html-loader并存
+  </p>
 </div>
 
 <h2 align="center">Install</h2>
@@ -31,7 +36,7 @@ inject: body(默认),head
 
 type: js(默认),css
 
-(tip: 如果引用的js为mjs.sinaimg.cn/umd下的sina umd组件，marauder-umd-loader将对组件做版本限制，只引用一个版本，若引用多个版本将引入失败)
+(tip: 如果引用的 js 为 mjs.sinaimg.cn/umd 下的 sina umd 组件，marauder-umd-loader 将对组件做版本限制，只引用一个版本，若引用多个版本将引入失败)
 
 ```js
 import "marauder-umd-loader?inject=body&type=js&onlineUrl=https://mjs.sinaimg.cn/wap/online/public/wapLogin/wapLogin_main.js!@mfelibs/base-tools-SUDA";

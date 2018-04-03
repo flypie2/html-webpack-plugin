@@ -2,6 +2,7 @@
 
 // use Polyfill for util.promisify in node versions < v8
 const promisify = require("util.promisify");
+const ejs = require("ejs");
 
 const vm = require("vm");
 const fs = require("fs");
@@ -246,7 +247,12 @@ class HtmlWebpackPlugin {
         .then(
           compilationResult =>
             typeof compilationResult !== "function"
-              ? compilationResult
+              ? self.executeTemplate(
+                  ejs.compile(compilationResult),
+                  chunks,
+                  assets,
+                  compilation
+                )
               : self.executeTemplate(
                   compilationResult,
                   chunks,

@@ -1,11 +1,10 @@
 {
   "name": "sina-html-webpack-plugin",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "description":
     "Simplifies creation of HTML files to serve your webpack bundles",
-  "author":
-    "flypie2(小飞侠) 1037028848@qq.com",
+  "author": "flypie2(小飞侠) 1037028848@qq.com",
   "main": "index.js",
   "files": ["lib/", "index.js", "default_index.ejs"],
   "scripts": {
@@ -45,7 +44,8 @@
     "pretty-error": "^2.0.2",
     "tapable": "^1.0.0",
     "toposort": "^1.0.0",
-    "util.promisify": "1.0.0"
+    "util.promisify": "1.0.0",
+    "ejs": "^2.5.8"
   },
   "peerDependencies": {
     "webpack": "^1.0.0 || ^2.0.0 || ^3.0.0 || ^4.0.0"
